@@ -67,6 +67,7 @@ public class Study extends AbstractNamedEntity<Study> implements TypeWithNotes {
 
 	private ObjectWithNotes<Indication> d_indication;
 	private CharacteristicsMap d_chars = new CharacteristicsMap();
+	private Map<MeasurementKey, BasicMeasurement> d_measurements;
 
 	private final ObservableList<StudyOutcomeMeasure<? extends Variable>> d_outcomeMeasures = new ArrayListModel<StudyOutcomeMeasure<? extends Variable>>();
 	private final ObservableList<StudyOutcomeMeasure<Endpoint>> d_endpoints;
@@ -77,8 +78,17 @@ public class Study extends AbstractNamedEntity<Study> implements TypeWithNotes {
 	private final ObservableList<Epoch> d_epochs = new ArrayListModel<Epoch>();
 	private final ObservableList<StudyActivity> d_studyActivities = new ArrayListModel<StudyActivity>();
 
-	private final Map<MeasurementKey, BasicMeasurement> d_measurements = new HashMap<MeasurementKey, BasicMeasurement>();
 	private final ObservableList<Note> d_notes = new ArrayListModel<Note>();
+
+	/**
+	 * Constructor which sets the initalCapacity and loadFactor for the MeasurementsMap
+	 * @param initialCapacity
+	 * @param loadFactor
+	 */
+	public Study(int initialCapacity, float loadFactor) {
+		this();
+		d_measurements = new HashMap<MeasurementKey, BasicMeasurement>(initialCapacity, loadFactor);
+	}
 
 	public Study() {
 		this(null, null);
@@ -87,6 +97,8 @@ public class Study extends AbstractNamedEntity<Study> implements TypeWithNotes {
 	public Study(final String id, final Indication i) {
 		super(id);
 		d_indication = new ObjectWithNotes<Indication>(i);
+		d_measurements = new HashMap<MeasurementKey, BasicMeasurement>();
+
 		setCharacteristic(BasicStudyCharacteristic.CREATION_DATE, DateUtil.getCurrentDateWithoutTime());
 		setCharacteristic(BasicStudyCharacteristic.TITLE, "");
 		setCharacteristic(BasicStudyCharacteristic.PUBMED, new PubMedIdList());

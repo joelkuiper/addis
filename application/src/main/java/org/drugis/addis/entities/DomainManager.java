@@ -35,8 +35,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import javax.xml.bind.JAXBException;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.TransformerException;
 
+import org.codehaus.stax2.XMLOutputFactory2;
 import org.drugis.addis.entities.data.AddisData;
 import org.drugis.addis.gui.Main.XMLStreamFilter;
 import org.drugis.addis.util.jaxb.JAXBConvertor;
@@ -113,7 +116,9 @@ public class DomainManager {
 	 * Save the domain to an XML stream (new format, .addis). WARNING: only for use in tests, as it increases the risk of data loss.
 	 * @see {@link #saveXMLDomain(File)}
 	 * @param os Stream to write domain to.
+	 * @deprecated
 	 */
+	@Deprecated
 	public void saveXMLDomain(OutputStream os) throws IOException {
 		try {
 			AddisData addisData = JAXBConvertor.convertDomainToAddisData(d_domain);
@@ -127,10 +132,13 @@ public class DomainManager {
 		try {
 			BufferedOutputStream buf = new BufferedOutputStream(os);
 			FilterOutputStream fos = new XMLStreamFilter(buf);
-			JAXBHandler.marshallAddisData(data, fos);
+			XMLOutputFactory xmlof = XMLOutputFactory2.newInstance();
+			XMLStreamWriter xmler = xmlof.createXMLStreamWriter(fos, "UTF-8");
+			JAXBHandler.marshallAddisData(data, xmler);
 			buf.flush();
 			fos.close();
-		} catch (JAXBException e) {
+			xmler.close();
+		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}

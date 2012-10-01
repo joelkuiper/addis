@@ -37,11 +37,16 @@ import java.util.regex.Pattern;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.PropertyException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.ValidationEvent;
 import javax.xml.bind.ValidationEventHandler;
 import javax.xml.bind.ValidationEventLocator;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
+import org.codehaus.stax2.XMLInputFactory2;
 import org.drugis.addis.entities.Domain;
 import org.drugis.addis.entities.data.AddisData;
 
@@ -106,18 +111,37 @@ public class JAXBHandler {
 		}
 	}
 
-	public static void marshallAddisData(AddisData data, OutputStream os) throws JAXBException {
+
+	private static Marshaller createMarshaller() throws JAXBException, PropertyException {
 		Marshaller marshaller = JAXB.getInstance().createMarshaller();
 		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 		marshaller.setProperty(Marshaller.JAXB_NO_NAMESPACE_SCHEMA_LOCATION, "http://drugis.org/files/addis-" + XmlFormatType.CURRENT_VERSION + ".xsd");
-		marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
-		marshaller.marshal(data, os);
+		return marshaller;
+	}
+
+	public static void marshallAddisData(AddisData data, XMLStreamWriter xmler) throws JAXBException {
+		Marshaller marshaller = createMarshaller();
+		marshaller.marshal(data, xmler);
+	}
+
+	public static void marshallAddisData(AddisData data, OutputStream xmler) throws JAXBException {
+		Marshaller marshaller = createMarshaller();
+		marshaller.marshal(data, xmler);
 	}
 
 	public static AddisData unmarshallAddisData(InputStream is) throws JAXBException {
 		Unmarshaller unmarshaller = JAXB.getInstance().createUnmarshaller();
-		unmarshaller.setEventHandler(new AddisDataValidationEventHandler());
-		return (AddisData) unmarshaller.unmarshal(is);
+		XMLInputFactory2 xmlif = (XMLInputFactory2) XMLInputFactory2.newFactory();
+		xmlif.configureForSpeed();
+		try {
+			XMLStreamReader xmler = xmlif.createXMLStreamReader(is);
+			unmarshaller.setEventHandler(new AddisDataValidationEventHandler());
+			AddisData data = (AddisData) unmarshaller.unmarshal(xmler);
+			xmler.close();
+			return data;
+		} catch (XMLStreamException e) {
+			throw new JAXBException(e);
+		}
 	}
 
 	// should be moved somewhere else and changed

@@ -861,8 +861,9 @@ public class JAXBConvertor {
 	public static Map<MeasurementKey, BasicMeasurement> convertMeasurements(Measurements measurements, List<Arm> arms,
 			List<Epoch> epochs, Map<String, org.drugis.addis.entities.StudyOutcomeMeasure<?>> outcomeMeasures)
 	throws ConversionException {
-		Map<MeasurementKey, BasicMeasurement> map = new HashMap<MeasurementKey, BasicMeasurement>();
-		for(org.drugis.addis.entities.data.Measurement m : measurements.getMeasurement()) {
+		List<org.drugis.addis.entities.data.Measurement> xmlMeasurements = measurements.getMeasurement();
+		Map<MeasurementKey, BasicMeasurement> map = new HashMap<MeasurementKey, BasicMeasurement>(xmlMeasurements.size());
+		for(org.drugis.addis.entities.data.Measurement m : xmlMeasurements) {
 			String omId = m.getStudyOutcomeMeasure().getId();
 			Arm arm = m.getArm() != null ? findArm(m.getArm().getName(), arms) : null;
 			map.put(new MeasurementKey(outcomeMeasures.get(omId), arm, convertWhenTaken(m.getWhenTaken(), epochs)), convertMeasurement(m));
@@ -903,7 +904,7 @@ public class JAXBConvertor {
 	}
 
 	public static Study convertStudy(org.drugis.addis.entities.data.Study study, Domain domain) throws ConversionException {
-		Study newStudy = new Study();
+		Study newStudy = new Study(study.getMeasurements().getMeasurement().size(), 0.75f);
 		newStudy.setName(study.getName());
 		newStudy.setIndication(findNamedItem(domain.getIndications(), study.getIndication().getName()));
 		convertNotes(study.getIndication().getNotes().getNote(), newStudy.getIndicationWithNotes().getNotes());
@@ -923,7 +924,6 @@ public class JAXBConvertor {
 		for(Entry<String, StudyOutcomeMeasure<?>> om : outcomeMeasures.entrySet()) {
 			newStudy.addStudyOutcomeMeasure(om.getValue());
 		}
-
 		Map<MeasurementKey, BasicMeasurement> measurements = convertMeasurements(study.getMeasurements(), arms, newStudy.getEpochs(), outcomeMeasures);
 		for(Entry<MeasurementKey, BasicMeasurement> m : measurements.entrySet()) {
 			MeasurementKey key = m.getKey();
